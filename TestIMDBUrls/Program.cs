@@ -1,6 +1,7 @@
 ﻿using Newtonsoft.Json;
 using System;
 using System.Collections.Generic;
+using System.Configuration;
 using System.IO;
 using System.Net;
 using System.Text.RegularExpressions;
@@ -11,16 +12,16 @@ namespace TestIMDBUrls
     {
         static void Main(string[] args)
         {
-            int year = 2016;
+            int year = Convert.ToInt32(ConfigurationManager.AppSettings["MovieYearStartingLatest"]);
+            int endingYear = Convert.ToInt32(ConfigurationManager.AppSettings["MovieEndingYearOldest"]);
             bool isSuccess = false;
             while (!isSuccess && year > 1951)
             {
-                year--;
                 //get auth token from http://api.cinemalytics.com/
-                string authToken = "authToken";
-                string api = string.Format(format: "http://api.cinemalytics.com/v1/movie/year/{0}/?auth_token={1}", arg0: year, arg1: authToken);
+                string authToken = ConfigurationManager.AppSettings["MovieAuthToken"];
+                string api = string.Format(format:ConfigurationManager.AppSettings["MovieAPIUrl"], arg0: year, arg1: authToken);
                 string json;
-                using (var webClient = new System.Net.WebClient())
+                using (var webClient = new WebClient())
                 {
                     webClient.Proxy = null;
                     json = webClient.DownloadString(api);
@@ -48,6 +49,7 @@ namespace TestIMDBUrls
                         continue;
                     }
                 }
+                year--;
             }
             if (!isSuccess)
             {
