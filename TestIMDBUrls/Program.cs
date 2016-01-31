@@ -19,7 +19,7 @@ namespace TestIMDBUrls
             {
                 //get auth token from http://api.cinemalytics.com/
                 string authToken = ConfigurationManager.AppSettings["MovieAuthToken"];
-                string api = string.Format(format:ConfigurationManager.AppSettings["MovieAPIUrl"], arg0: year, arg1: authToken);
+                string api = string.Format(format: ConfigurationManager.AppSettings["MovieAPIUrl"], arg0: year, arg1: authToken);
                 string json;
                 using (var webClient = new WebClient())
                 {
@@ -30,7 +30,8 @@ namespace TestIMDBUrls
                 foreach (Model model in listmodel)
                 {
                     string moviename = Regex.Replace(model.OriginalTitle, pattern: @"[^\w\d]", replacement: "");
-                    string url = string.Format(format: "http://wanderfull-microchip.weebly.com/snape-{0}.html", arg0: moviename);
+                    string treasureHuntUrl = ConfigurationManager.AppSettings["TreasureHuntUrl"];
+                    string url = string.Format(format: treasureHuntUrl, arg0: "hagrid", arg1: moviename);
                     try
                     {
                         var request = WebRequest.Create(url) as HttpWebRequest;
