@@ -5,6 +5,7 @@ using System.Configuration;
 using System.IO;
 using System.Net;
 using System.Text.RegularExpressions;
+using System.Xml;
 
 namespace TestIMDBUrls
 {
@@ -14,47 +15,55 @@ namespace TestIMDBUrls
         {
             int year = Convert.ToInt32(ConfigurationManager.AppSettings["MovieYearStartingLatest"]);
             int endingYear = Convert.ToInt32(ConfigurationManager.AppSettings["MovieEndingYearOldest"]);
-            bool isSuccess = false;
-            while (!isSuccess && year > 1951)
+            var doc = new XmlDocument();
+            doc.Load(AppDomain.CurrentDomain.BaseDirectory + "\\keys.xml");
+            XmlNode node = doc.DocumentElement.SelectSingleNode("/keys");
+            foreach (XmlNode childnode in node.ChildNodes)
             {
-                //get auth token from http://api.cinemalytics.com/
-                string authToken = ConfigurationManager.AppSettings["MovieAuthToken"];
-                string api = string.Format(format: ConfigurationManager.AppSettings["MovieAPIUrl"], arg0: year, arg1: authToken);
-                string json;
-                using (var webClient = new WebClient())
+                string key = childnode.InnerText.Trim(); //or loop through its children as well
+                bool isSuccess = false;
+                while (!isSuccess && year > 1951)
                 {
-                    webClient.Proxy = null;
-                    json = webClient.DownloadString(api);
-                }
-                List<Model> listmodel = JsonConvert.DeserializeObject<List<Model>>(json);
-                foreach (Model model in listmodel)
-                {
-                    string moviename = Regex.Replace(model.OriginalTitle, pattern: @"[^\w\d]", replacement: "");
-                    string treasureHuntUrl = ConfigurationManager.AppSettings["TreasureHuntUrl"];
-                    string url = string.Format(format: treasureHuntUrl, arg0: "hagrid", arg1: moviename);
-                    try
+                    //get auth token from http://api.cinemalytics.com/
+                    string authToken = ConfigurationManager.AppSettings["MovieAuthToken"];
+                    string api = string.Format(format: ConfigurationManager.AppSettings["MovieAPIUrl"], arg0: year, arg1: authToken);
+                    string json;
+                    using (var webClient = new WebClient())
                     {
-                        var request = WebRequest.Create(url) as HttpWebRequest;
-                        var response = request.GetResponse() as HttpWebResponse;
-                        Stream stream = response.GetResponseStream();
-                        if (response.StatusCode == HttpStatusCode.OK)
+                        webClient.Proxy = null;
+                        json = webClient.DownloadString(api);
+                    }
+                    List<Model> listmodel = JsonConvert.DeserializeObject<List<Model>>(json);
+                    foreach (Model model in listmodel)
+                    {
+                        string moviename = Regex.Replace(model.OriginalTitle, pattern: @"[^\w\d]", replacement: "");
+                        string treasureHuntUrl = ConfigurationManager.AppSettings["TreasureHuntUrl"];
+                        string url = string.Format(format: treasureHuntUrl, arg0: key, arg1: moviename);
+                        try
                         {
-                            isSuccess = true;
-                            Console.WriteLine(moviename);
-                            Console.WriteLine("Movie url:" + url);
-                            break;
+                            var request = WebRequest.Create(url) as HttpWebRequest;
+                            var response = request.GetResponse() as HttpWebResponse;
+                            Stream stream = response.GetResponseStream();
+                            if (response.StatusCode == HttpStatusCode.OK)
+                            {
+                                isSuccess = true;
+                                Console.WriteLine(moviename);
+                                Console.WriteLine("Movie url:" + url);
+                                break;
+                            }
+                        }
+                        catch
+                        {
+                            continue;
                         }
                     }
-                    catch
-                    {
-                        continue;
-                    }
+                    year--;
                 }
-                year--;
-            }
-            if (!isSuccess)
-            {
-                Console.WriteLine(value: "nopes, no result found sorry.! :(");
+                if (!isSuccess)
+                {
+                    Console.WriteLine(value: "nopes, no result found sorry.! :(");
+                }
+
             }
 
             Console.ReadLine();
