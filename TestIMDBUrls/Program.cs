@@ -49,6 +49,7 @@ namespace TestIMDBUrls
                                 isSuccess = true;
                                 Console.WriteLine(moviename);
                                 Console.WriteLine("Movie url:" + url);
+                                System.Diagnostics.Process.Start(url);
                                 break;
                             }
                         }
